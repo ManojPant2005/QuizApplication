@@ -1,0 +1,245 @@
+﻿@page "/playquiz/{questionPath}"
+
+@using QuizApplication.Shared.DTO;
+@using MudBlazor;
+@using Blazored.Video;
+@using QuizApplication.Shared.Services;
+@inject QuestionService _questionService;
+@inject QuizItemService _quizItemService;
+@inject NavigationManager Navigation;
+
+
+
+<MudText Color="Color.Primary"
+         Typo="Typo.h3"
+         Align="Align.Center">
+    Answer Quiz
+</MudText>
+
+@if (question != null)
+{
+    <MudPaper>
+        @if (IsVideoExtension(question?.Question?.FileExtension))
+        {
+            <BlazoredVideo loop="loop"
+                           Autoplay="autoplay"
+                           class="w-100"
+                           style="max-width:800px;"
+                           controls="controls">
+                <source src="@question?.Question?.MediaFilePath" type="video/mp4" />
+            </BlazoredVideo>
+
+        }
+        else
+        {
+            <MudImage Src="@question?.Question?.MediaFilePath"
+                      Alt="@question?.Question?.QuestionPath"
+                      Fluid="true"
+                      Elevation="25"
+                      Class="rounded-lg" />
+        }
+    </MudPaper>
+    <MudCard>
+        <MudCardContent>
+            <MudText Typo="Typo.h5">@question?.Question?.Title</MudText>
+            </MudCardContent>
+        </MudCard>
+    <MudList>
+        @if (question?.Answers != null)
+        {
+            @foreach (var answer in question.Answers)
+            {
+                @if (question?.Answers?.Count <= 1)
+                {
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudTextField @bind-Value="@userInput"
+                                      Label="Answer"
+                                      Variant="Variant.Outlined">
+                        </MudTextField>
+                    </MudItem>
+                }
+                else
+                {
+                    <MudItem>
+                        <MudCheckBox @bind-Checked="@isCheckedDict[answer.Content]"
+                                     Color="Color.Primary">
+                            <MudText>@answer.Content</MudText>
+                            </MudCheckBox>
+                        </MudItem>
+                }
+            }
+        }
+    </MudList>
+    <MudButton EndIcon="@Icons.Material.Filled.Send"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
+               OnClick="() => CheckAnswer(question)"
+               Style="margin-bottom:30px; margin-left:15px">
+        Submit
+    </MudButton>
+
+    @if (question?.Question?.TimeLimit >= 1)
+    {
+        @if (timeRemainingSpan.TotalSeconds > 0)
+        {
+            <MudText Typo="Typo.h6" Style="margin-left:15px">
+                Time Remaining: @timeRemainingSpan.Minutes:@timeRemainingSpan.Seconds
+            </MudText>
+        }
+        else
+        {
+            timeUpDialog?.Show();
+            <MudDialog @ref="timeUpDialog" Title="Time's Up!" DisableBackdropClick="true" Position="DialogPosition.Center"
+                       CloseOnEscapeKey="false">
+                <DialogContent>
+                    <MudText>The time limit has been reached. You lost!</MudText>
+                </DialogContent>
+                <DialogActions>
+                    <MudButton OnClick="@GoPlayQuiz" Color="Color.Primary">Go to Play Quiz</MudButton>
+                </DialogActions>
+            </MudDialog>
+        }
+    }
+}
+else
+{
+    <MudText>@errorMessage</MudText>
+}
+
+@code {
+    [Parameter]
+    public string? QuestionPath { get; set; }
+    private List<AnswersQuestionResponseDto>? questions;
+    private AnswersQuestionResponseDto? question;
+    private string? errorMessage = "No questions here";
+    private Dictionary<string, bool> isCheckedDict { get; set; } = new Dictionary<string, bool>();
+    private string? userInput;
+    private bool isScored = false;
+    private DateTime startedAt;
+    private MudDialog? timeUpDialog;
+    TimeSpan timeRemainingSpan = new TimeSpan();
+    TimeSpan timeSpent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        questions = await _questionService.FetchQuestionsAsync();
+        question = await GetQuestionFromPath();
+        InitializeCheckedDict();
+        startedAt = DateTime.Now;
+        QuizTimer();
+
+    }
+
+    private void InitializeCheckedDict()
+    {
+        isCheckedDict = questions?.SelectMany(q => q.Answers)
+                                  .ToDictionary(answer => answer.Content, _ => false)
+                      ?? new Dictionary<string, bool>();
+    }
+
+    private async Task<AnswersQuestionResponseDto?> GetQuestionFromPath()
+    {
+        if (questions == null || string.IsNullOrEmpty(QuestionPath))
+        {
+            throw new Exception(errorMessage);
+        }
+        return questions.Find(question =>
+        question?.Question != null && question.Question.QuestionPath == QuestionPath);
+    }
+
+    private async Task CheckAnswer(AnswersQuestionResponseDto? question)
+    {
+        if (!string.IsNullOrEmpty(userInput))
+        {
+            var matchingAnswer = question?.Answers?.FirstOrDefault(a => a.Content.Equals(userInput, StringComparison.OrdinalIgnoreCase));
+
+            if (matchingAnswer != null && matchingAnswer.IsCorrect)
+            {
+                isCheckedDict[matchingAnswer.Content] = true;
+                isScored = true;
+            }
+        }
+        else
+        {
+            var selectedAnswers = question?.Answers?.Where(a => isCheckedDict.ContainsKey(a.Content) && isCheckedDict[a.Content]);
+
+            if (selectedAnswers != null && selectedAnswers.Any())
+            {
+                var incorrectAnswer = selectedAnswers.FirstOrDefault(a => !a.IsCorrect);
+                if (incorrectAnswer == null)
+                {
+                    isScored = true;
+                }
+            }
+        }
+        await UploadQuizItem();
+    }
+
+    private void QuizTimer()
+    {
+        if (question != null && question.Question != null)
+        {
+            var timer = new System.Timers.Timer(1000);
+            timer.Elapsed += async (sender, e) => await UpdateTimeRemaining();
+            timer.AutoReset = true;
+            timer.Start();
+        }
+    }
+
+    private async Task UpdateTimeRemaining()
+    {
+        bool quizItemUploaded = false;
+        if (question != null && question.Question != null)
+        {
+            int timeLimit = question.Question.TimeLimit;
+            timeRemainingSpan = startedAt.Add(TimeSpan.FromMinutes(timeLimit)) - DateTime.Now;
+            if (timeRemainingSpan.TotalSeconds == 0 && !quizItemUploaded)
+            {
+                isScored = false;
+                timeSpent = startedAt - DateTime.Now;
+                string? questionPath = question?.Question?.QuestionPath;
+                quizItemUploaded = true;
+                await UploadQuizItem();
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task UploadQuizItem()
+    {
+        if (question == null || question.Question == null)
+        {
+            throw new Exception(errorMessage);
+        }
+
+        QuizItemQuestionResquestDto quizItemQuestionResquestDto = new QuizItemQuestionResquestDto
+            {
+                QuestionPath = question.Question.QuestionPath,
+
+                QuizItem = new QuizItemRequestDto
+                {
+                    IsScored = isScored,
+                    TimeSpent = (int)timeSpent.TotalMinutes,
+                    Started_At = startedAt
+                }
+            };
+
+        await _quizItemService.UploadQuizItemAsync(quizItemQuestionResquestDto);
+    }
+
+    private void GoPlayQuiz()
+    {
+        Navigation.NavigateTo($"playquiz");
+    }
+
+    private bool IsVideoExtension(string? fileExtension)
+    {
+        if (string.IsNullOrEmpty(fileExtension))
+        {
+            return false;
+        }
+        string[] allowedVideoExtensions = new string[] { ".mp4", ".webm", ".x-m4v" };
+
+        return allowedVideoExtensions.Contains(fileExtension);
+    }
+}

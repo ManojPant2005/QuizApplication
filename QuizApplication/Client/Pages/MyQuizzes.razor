@@ -1,0 +1,131 @@
+﻿@page "/myquizzes"
+
+@using System.ComponentModel.DataAnnotations;
+@using QuizApplication.Shared.DTO;
+@using MudBlazor;
+@using QuizApplication.Shared.Services;
+@inject QuestionService _questionService;
+<PageTitle>My Quizzes</PageTitle>
+
+<MudText Color="Color.Primary"
+         Typo="Typo.h3"
+         Align="Align.Center">
+    My Quizzes
+</MudText>
+
+
+@if (questions != null)
+{
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Published Questions">
+            @foreach (var question in FilteredQuestions(true))
+            {
+                <MudExpansionPanel Text="@question?.Question?.Title">
+                    <ul>
+                        @if (question?.Answers != null)
+                        {
+                            @foreach (var answer in question.Answers)
+                            {
+                                <li>
+                                    @answer.Content
+                                    @if (answer.IsCorrect)
+                                    {
+                                        <MudChip Color="Color.Info">
+                                            True
+                                        </MudChip>
+                                    }
+                                    else
+                                    {
+                                        <MudChip Color="Color.Warning">
+                                            False
+                                        </MudChip>
+                                    }
+                                </li>
+                            }
+                        }
+                    </ul>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanel>
+
+        <MudExpansionPanel Text="Not Published Questions">
+            @foreach (var question in FilteredQuestions(false))
+            {
+                <MudExpansionPanel Text="@question?.Question?.Title">
+                    <ul>
+                        @if (question?.Answers != null)
+                        {
+                            @foreach (var answer in question.Answers)
+                            {
+                                <li>
+                                    @answer.Content
+                                    @if (answer.IsCorrect)
+                                    {
+                                        <MudChip Color="Color.Info">
+                                            True
+                                        </MudChip>
+                                    }
+                                    else
+                                    {
+                                        <MudChip Color="Color.Warning">
+                                            False
+                                        </MudChip>
+                                    }
+                                </li>
+                            }
+                        }
+                    </ul>
+                    @if (question?.Question != null)
+                    {
+                        @if (question?.Answers != null)
+                        {
+                            <MudButton OnClick="@(async() => await PublishQuestion(question.Question.QuestionPath))"
+                                       Variant="Variant.Filled"
+                                       Color="Color.Success">
+                                Publish
+                            </MudButton>
+                        }
+
+                        <MudButton OnClick="@(async() => await DeleteQuestion(question.Question.QuestionPath))"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Error">Delete</MudButton>
+                    }
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+}
+else
+{
+    <MudExpansionPanel>@errorMessage</MudExpansionPanel>
+}
+
+@code {
+    private List<AnswersQuestionResponseDto>? questions;
+    private string? errorMessage = "No questions here";
+
+    protected override async Task OnInitializedAsync()
+    {
+        questions = await _questionService.FetchQuestionsWithAnswersAsync();
+    }
+
+    private IEnumerable<AnswersQuestionResponseDto> FilteredQuestions(bool isPublished)
+    {
+        if (questions == null)
+        {
+            throw new Exception("Questions are null");
+        }
+
+        return questions.Where(q => q.Question != null && q.Question?.IsPublished == isPublished);
+    }
+
+    private async Task PublishQuestion(string questionPath)
+    {
+        questions = await _questionService.PublishQuestionAsync(questionPath);
+    }
+
+    private async Task DeleteQuestion(string questionPath)
+    {
+        questions = await _questionService.DeleteQuestionAsync(questionPath);
+    }
+}

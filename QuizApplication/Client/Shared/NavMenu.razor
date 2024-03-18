@@ -1,0 +1,28 @@
+﻿<MudNavMenu>
+    <MudNavLink Href="/" Match="NavLinkMatch.All">
+        <MudIcon Icon="@Icons.Material.Filled.Home" /> Home
+    </MudNavLink>
+            <MudNavLink Href="/playquiz" Match="NavLinkMatch.Prefix">
+                <MudIcon Icon="@Icons.Material.Filled.List" /> Start Quiz
+            </MudNavLink>
+
+            <MudNavGroup Title="Quiz Manager" Expanded="true">
+        <MudNavLink Href="/createquiz" Match="NavLinkMatch.Prefix">
+                    <MudIcon Icon="@Icons.Material.Filled.Create" /> Create Quiz
+                </MudNavLink>
+
+                <MudNavLink Href="/myquizzes" Match="NavLinkMatch.Prefix">
+                    <MudIcon Icon="@Icons.Material.Filled.Quiz" /> My QuizSection
+                </MudNavLink>
+
+                <MudNavLink Href="/quizparticipants" Match="NavLinkMatch.Prefix">
+                    <MudIcon Icon="@Icons.Material.Filled.List" /> QuizBoard
+                </MudNavLink>
+            </MudNavGroup>
+
+    @*     <MudNavLink Href="/test" Match="NavLinkMatch.Prefix">
+    <MudIcon Icon="@Icons.Material.Filled.Code" /> Swagger
+    </MudNavLink> *@
+
+</MudNavMenu>
+

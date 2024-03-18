@@ -1,0 +1,57 @@
+﻿@page "/createquiz"
+
+<h3>CreateQuiz</h3>
+@using QuizApplication.Client.Shared.Components;
+@using static QuizApplication.Client.Shared.Components.FormMediaUploadRequest;
+<PageTitle>Create Quiz</PageTitle>
+
+<MudText 
+    Color="Color.Primary" 
+    Typo="Typo.h3"
+    Align="Align.Center">
+    Create Quiz
+</MudText>
+
+<MudText 
+    Color="Color.Dark" 
+    Style="padding: 30px; line-height:2rem;" 
+    Typo="Typo.body1"
+    Align="Align.Left">
+    Dive into the world of interactive engagement by crafting your own quiz!
+    <div style="height: 20px;"></div>
+    Mix it up with diverse questions spanning different topics or a unique theme.
+    <MudSpacer />
+    Keep it crystal clear—provide multiple-choice options for your participants.
+    Don't forget to guide your quiz-takers with clear, easy-to-follow instructions!
+</MudText>
+
+<MudText Color="Color.Primary"
+         Typo="Typo.h5"
+         Align="Align.Center"
+         Style="padding-bottom: 30px;">
+    Upload File
+</MudText>
+
+<FormMediaUploadRequest />
+
+<MudText Color="Color.Primary"
+         Typo="Typo.h5"
+         Align="Align.Center"
+         Style="padding-bottom: 30px;">
+    Question
+</MudText>
+
+<FormQuestionUploadRequest />
+
+<MudText Color="Color.Primary"
+         Typo="Typo.h5"
+         Align="Align.Center"
+         Style="padding-bottom: 30px; padding-top:30px;">
+    Answers
+</MudText>
+
+<FormAnswersUploadRequest />
+
+
+
+

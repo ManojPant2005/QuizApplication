@@ -1,0 +1,85 @@
+﻿@page "/playquiz"
+@using QuizApplication.Shared.DTO;
+@using MudBlazor;
+@using QuizApplication.Shared.Services;
+@inject QuestionService _questionService;
+@inject QuizItemService _quizItemService;
+@implements IDisposable
+@inject ILogger<PlayQuiz> Logger
+@inject NavigationManager Navigation
+
+
+<PageTitle>Play Quiz</PageTitle>
+
+<MudText Color="Color.Primary"
+         Typo="Typo.h3"
+         Align="Align.Center">
+    Play Quiz
+</MudText>
+
+<MudText Color="Color.Primary"
+         Typo="Typo.h6"
+         Align="Align.Center">
+    Your Score: @score
+</MudText>
+
+@if (questions != null)
+{
+    @foreach (var question in questions)
+    {
+        <MudList Style="padding:0px 0px 0px 15px">
+            <MudItem xs="12" sm="12">
+                <MudField>
+                    <div class="d-flex" style="padding:15px 0;">
+                        <MudText Style="font-size:1.2rem">
+                            @question?.Question?.Title
+                            <MudButton EndIcon="@Icons.Material.Filled.Send"
+                                       Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Style="margin-left:5px"
+                                       Class="flex-initial d-flex mud-theme-primary" Elevation="0"
+                                       OnClick="() => NavigateToQuizComponent(question.Question.QuestionPath)">
+                                Answer
+                            </MudButton>
+                        </MudText>
+                    </div>
+                </MudField>
+            </MudItem>
+        </MudList>
+    }
+}
+else
+{
+    <MudText>@errorMessage</MudText>
+}
+
+@code {
+    private List<AnswersQuestionResponseDto>? questions;
+    private string? errorMessage = "No questions here";
+    private Dictionary<string, bool> isCheckedDict { get; set; } = new Dictionary<string, bool>();
+    private string? userInput;
+    private bool isScored = false;
+    private int score = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        questions = await _questionService.FetchQuestionsAsync();
+        score = await _quizItemService.FetchUserScoreAsync();
+        Navigation.LocationChanged += HandleLocationChanged;
+    }
+
+    private void NavigateToQuizComponent(string questionPath)
+    {
+        Navigation.NavigateTo($"playquiz/{questionPath}");
+    }
+
+    private void HandleLocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        Logger.LogInformation("URL of new location: {Location}", e.Location);
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= HandleLocationChanged;
+    }
+}

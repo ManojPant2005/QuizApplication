@@ -1,0 +1,70 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using QuizApplication.Shared.DTO;
+@using QuizApplication.Shared.Services;
+@inject AnswerService _answerService;
+
+
+<MudPaper>
+    <MudGrid>
+        @if (answersQuestion?.Answers?.Count > 0)
+        {
+            @foreach (var answer in answersQuestion.Answers)
+            {
+                <MudItem xs="12" Style="padding:30px;">
+                    <MudTextField Label="Content" @bind-Value="@answer.Content" />
+                    <MudSwitch Label="Is Correct" @bind-Checked="@answer.IsCorrect" />
+
+                    <MudButton OnClick="@(() => DeleteAnswer(answer))"
+                               Variant="Variant.Filled">
+                        Delete
+                    </MudButton>
+                </MudItem>
+            }
+        }
+
+        <div class="custom-button-group">
+            <MudButton OnClick="@AddAnswer"
+                       Variant="Variant.Filled"
+                       Color=" Color.Primary">
+                Add New Answer
+            </MudButton>
+
+            <MudButton OnClick="@OnValidSubmit"
+                       Variant="Variant.Filled"
+                       Color="Color.Success">
+                Send answers
+            </MudButton>
+        </div>
+
+    </MudGrid>
+</MudPaper>
+
+<style>
+    .custom-button-group {
+        display: flex;
+        justify-content: space-between;
+        margin: 30px;
+        gap: 20px;
+    }
+</style>
+
+@code {
+    private AnswersQuestionRequestDto answersQuestion = new AnswersQuestionRequestDto { Answers = new List<AnswerRequestDto>() };
+    private string? errorMessage;
+
+    private void AddAnswer()
+    {
+        answersQuestion?.Answers?.Add(new AnswerRequestDto());
+    }
+
+    private void DeleteAnswer(AnswerRequestDto answer)
+    {
+        answersQuestion?.Answers?.Remove(answer);
+    }
+
+    private async Task OnValidSubmit()
+    {
+        await _answerService.AnswersUploadAsync(answersQuestion);
+    }
+}
+

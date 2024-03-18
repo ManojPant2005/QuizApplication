@@ -1,0 +1,127 @@
+﻿@using System.Net.Http.Headers
+@using Microsoft.AspNetCore.Components.Forms
+@using QuizApplication.Shared.DTO;
+@using QuizApplication.Shared.Services;
+@using Microsoft.Extensions.Logging
+@using System.Text.Json;
+@using System.Text;
+@using Newtonsoft.Json
+
+@inject HttpClient _http
+@inject ILogger<FormMediaUploadRequest> _logger;
+@inject MediaStateContainer _stateContainer;
+@implements IDisposable;
+
+
+<p>
+    <label>
+        <InputFile OnChange="@OpenFile" />
+    </label>
+
+    @if (selectedFile != null)
+    {
+        <div class="card">
+            <div class="card-body">
+                File: @selectedFile.Name
+                <br />
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <div class="alert alert-success"
+                         style="margin-top: 15px"
+                         role="alert">
+                        @successMessage
+                        @mediaResponse?.StoredFileName
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-warning"
+                         style="margin-top: 15px"
+                         role="alert">
+                        @errorMessage
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <div style="margin-top: 15px">
+        <button class="btn btn-block btn-success"
+        @onclick="async () => await LoadFiles()">
+            Upload File
+        </button>
+    </div>
+
+</p>
+
+
+@code {
+    private IBrowserFile? selectedFile;
+    private long maxFileSize = 1024 * 1024;
+    private string? successMessage;
+    private string? errorMessage;
+    private MediaFileResponseDto? mediaResponse = new();
+
+    private async Task OpenFile(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        await Task.CompletedTask;
+    }
+
+    private async Task LoadFiles()
+    {
+        bool upload = false;
+        using var content = new MultipartFormDataContent();
+
+        if (selectedFile != null)
+        {
+            var fileContent = new StreamContent(selectedFile.OpenReadStream(maxFileSize));
+
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(selectedFile.ContentType);
+
+            content.Add(
+                content: fileContent,
+                name: "File",
+                fileName: selectedFile.Name);
+
+            upload = true;
+
+            if (upload)
+            {
+                //Token requests occur automatically.
+                //no need of: await _quizService.RequestAuthToken();
+                var response = await _http.PostAsync("api/MediaFiles/Upload", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (mediaResponse != null)
+                    {
+                      mediaResponse = JsonConvert.DeserializeObject<MediaFileResponseDto>(responseContent);
+
+                        _stateContainer.SetValue(mediaResponse);
+
+                        successMessage = "File uploaded successfully!";
+                        _logger.LogInformation(successMessage);
+                        StateHasChanged();
+                    }
+                }
+                else
+                {
+                    errorMessage = response.ReasonPhrase;
+                    _logger.LogError("Error uploading file {FileName}: Status code {StatusCode}", selectedFile.Name, response.StatusCode);
+                }
+            }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        _stateContainer.OnStateChange += StateHasChanged;
+    }
+    public void Dispose()
+    {
+        _stateContainer.OnStateChange -= StateHasChanged;
+    }
+}

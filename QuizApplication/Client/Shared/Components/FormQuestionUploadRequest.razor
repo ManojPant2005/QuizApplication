@@ -1,0 +1,70 @@
+﻿@using System.ComponentModel.DataAnnotations;
+@using QuizApplication.Shared.DTO;
+@using MudBlazor;
+@using Microsoft.AspNetCore.Components.Forms
+@using QuizApplication.Shared.Services;
+@inject QuestionService _questionService;
+
+
+<EditForm Model="@requestModel" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator />
+    <MudGrid>
+        <MudItem xs="12" sm="7">
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Title"
+                    @bind-Value="requestModel.Title"
+                                  For="@(() => requestModel.Title)"
+                                  Class="mt-3"
+                                  Immediate="true" />
+
+                    <MudTextField Label="Question Path"
+                    @bind-Value="requestModel.QuestionPath"
+                                  For="@(() => requestModel.QuestionPath)"
+                                  HelperText="Max.25 characters"
+                                  Class="mt-3"
+                                  Immediate="true" />
+
+                    <MudTextField Label="Time Limit"
+                    @bind-Value="requestModel.TimeLimit"
+                                  For="@(() => requestModel.TimeLimit)"
+                                  HelperText="Time in minutes"
+                                  Class="mt-3"
+                                  Immediate="true"
+                                  InputType="InputType.Number" />
+
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Class="ml-auto">
+                        Submit
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        @if (success)
+        {
+            <MudItem xs="12" sm="5">
+                <MudPaper Class="pa-4 mud-height-full">
+                    <MudText Color="Color.Success">@successMessage</MudText>
+                </MudPaper>
+            </MudItem>
+        }
+
+    </MudGrid>
+</EditForm>
+
+@code {
+    QuestionRequestDto requestModel = new QuestionRequestDto();
+    bool success;
+    private string? successMessage;
+    private QuestionRequestDto? responseContent = new();
+
+    private async Task OnValidSubmit()
+    {
+        responseContent = await _questionService.QuestionUploadAsync(requestModel, successMessage, success);
+    }
+}

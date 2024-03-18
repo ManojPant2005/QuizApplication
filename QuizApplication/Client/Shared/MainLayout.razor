@@ -1,0 +1,99 @@
+﻿
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="MuudstrapTheme" />
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+
+<MudLayout>
+
+    <MudAppBar Style="height: 85px; padding-top: 10px;">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        Quiz Demo
+        <MudSpacer />
+      
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="@_drawerOpen">
+    <NavMenu />     
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Medium" Style="padding-top: 60px;">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+
+</MudLayout>
+
+@code
+{
+    bool _drawerOpen = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    MudTheme MuudstrapTheme = new MudTheme()
+    {
+        Palette = new PaletteLight()
+        {
+            Primary = "#0D47A1",
+            Secondary = Colors.Green.Accent4,
+            AppbarBackground = "#0D47A1",
+            Info = "#64a7e2",
+            Success = "#2ECC40",
+            Warning = "#FFC107",
+            Error = "#FF0000",
+            TextPrimary = "#0A7BCF",
+            TextSecondary = "#4CAF50",
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#6585e0",
+            Secondary = "#607D8B",
+            Info = "#a4c2dd",
+            Success = "#2ECC40",
+            Warning = "#dc2d7e",
+            Error = "#de2000",
+            AppbarBackground = "#121212",
+            TextPrimary = "#E0E0E0",
+            TextSecondary = "#BDBDBD",
+        },
+
+        LayoutProperties = new LayoutProperties()
+        {
+            DrawerWidthLeft = "260px",
+            DrawerWidthRight = "300px"
+        },
+
+        Typography = new Typography()
+        {
+            H6 = new H6()
+            {
+                FontFamily = new[] { "Roboto", "Helvetica", "Arial", "sans-serif" },
+                FontSize = "1.5rem",
+                FontWeight = 400,
+                LineHeight = 1.7,
+                LetterSpacing = "normal"
+            },
+
+            Button = new Button()
+            {
+                FontFamily = new[] { "system-ui", "-apple-system", "Segoe UI", "Roboto ", "Helvetica Neue", "Arial", "Noto Sans", "Liberation Sans", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" },
+                FontSize = "1rem",
+                FontWeight = 400,
+                LineHeight = 1.5,
+                LetterSpacing = "normal"
+            }
+        }
+    };
+}
+
+
+@*@inherits LayoutComponentBase
+
+<main>
+    @Body
+</main>*@

@@ -1,0 +1,42 @@
+﻿@page "/quizparticipants"
+
+@using QuizApplication.Shared.DTO
+@using QuizApplication.Shared.Services
+@inject QuizItemService QuizItemService
+
+
+<PageTitle>Answered Quizzes</PageTitle>
+
+<MudText Color="Color.Primary"
+         Typo="Typo.h3"
+         Align="Align.Center">
+    Answered Quizzes
+</MudText>
+
+<div class="ma-5 d-flex justify-center">
+    <MudTable Items="@quizItems">
+        <HeaderContent>
+            <MudTh>Question</MudTh>
+            <MudTh>Participant</MudTh>
+            <MudTh>Time Spent in Minutes</MudTh>
+            <MudTh>Score</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Question">@context.QuestionTitle</MudTd>
+                <MudTd DataLabel="Participant">@context?.QuizItem?.Nickname</MudTd>
+                <MudTd DataLabel="Time Spent in Minutes">@context?.QuizItem?.TimeSpent</MudTd>
+                <MudTd DataLabel="Score">@((context?.QuizItem?.IsScored == true ? 1 : 0))</MudTd>
+            </RowTemplate>
+
+        </MudTable>
+    </div>
+
+
+    @code {
+    private List<QuizItemQuestionResponseDto>? quizItems;
+
+    protected override async Task OnInitializedAsync()
+    {
+        quizItems = await QuizItemService.FetchParticipantsAsync();
+    }
+}
